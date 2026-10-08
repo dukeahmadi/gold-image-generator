@@ -15,13 +15,13 @@ PLACEMENT = {
 }
 
 PRESERVE_JEWELRY = (
-    "Keep the jewelry exactly as in image 1: same shape, design, gold color and finish, "
-    "engravings, gemstones, chain links and proportions. Do not redesign, add or remove "
-    "any detail."
+    "Keep the jewelry exactly as in image 1: same shape, design, metal color and finish "
+    "(gold, silver, rose gold or two-tone), engravings, gemstones, chain links and "
+    "proportions. Do not redesign, add or remove any detail."
 )
 
 
-def white_background(jewelry: str = "gold jewelry") -> str:
+def white_background(jewelry: str = "jewelry") -> str:
     return (
         f"Image 1 is a product photo of {jewelry}. Place the {jewelry} on a pure white "
         "(#FFFFFF) seamless studio background with soft, natural lighting and a subtle "
@@ -37,7 +37,7 @@ def on_model(jewelry: str) -> str:
         )
     where = PLACEMENT[jewelry]
     return (
-        f"Image 1 is a product photo of a gold {jewelry}. Image 2 is a photo of a person. "
+        f"Image 1 is a product photo of a {jewelry}. Image 2 is a photo of a person. "
         f"Put the {jewelry} from image 1 on the person's {where} in image 2, worn "
         "naturally with realistic scale, position, perspective and gravity. "
         f"{PRESERVE_JEWELRY} Keep the person, face, pose, skin, clothing, background and "

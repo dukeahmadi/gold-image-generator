@@ -2,6 +2,7 @@
 
     # product photo -> white background
     python -m gold_imagegen.compare --task white_background --product samples/ring.jpg
+    python -m gold_imagegen.compare --task white_background --product samples/ring.jpg --local-cutout
 
     # product photo + model photo -> jewelry worn by the model
     python -m gold_imagegen.compare --task on_model --jewelry necklace \\
@@ -33,6 +34,7 @@ DEFAULT_MODELS = (
     "google/gemini-nano-banana-2.1",
     "bytedance-seed/seedream-5-0-pro",
 )
+LOCAL_CUTOUT = "local/cutout"  # or local/cutout:<rembg model>; white_background only, no API call
 EXTENSIONS = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
 
 
@@ -47,7 +49,21 @@ class ModelRun:
 
 
 def slug(model: str) -> str:
-    return model.replace("/", "__")
+    return model.replace("/", "__").replace(":", "_")
+
+
+def is_local(model: str) -> bool:
+    return model.startswith(LOCAL_CUTOUT)
+
+
+def make_provider(api_key: str | None, model: str) -> ImageEditProvider:
+    if is_local(model):
+        from .providers.local_cutout import LocalCutoutProvider  # needs the cutout extras
+
+        return LocalCutoutProvider(model.partition(":")[2] or None)
+    if api_key is None:
+        raise ConfigError("an API key is required for non-local models")
+    return OpenRouterProvider(api_key, model)
 
 
 async def run_comparison(
@@ -131,6 +147,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model-photo", type=Path, help="person photo (on_model only)")
     parser.add_argument("--jewelry", default="necklace", choices=sorted(prompts.PLACEMENT))
     parser.add_argument("--models", default=",".join(DEFAULT_MODELS), help="comma-separated OpenRouter model ids")
+    parser.add_argument(
+        "--local-cutout", action="store_true",
+        help="also run the local background-removal baseline (white_background only, free)",
+    )
     parser.add_argument("--out", type=Path, default=Path("out"))
     parser.add_argument("--max-cost", type=float, default=1.0, help="stop after this many USD (default 1.0)")
     parser.add_argument("--quality", help="pass-through quality (low|medium|high|auto); not all models accept it")
@@ -145,6 +165,10 @@ def main(argv: list[str] | None = None) -> int:
             parser.error(f"file not found: {path}")
 
     models = [m.strip() for m in args.models.split(",") if m.strip()]
+    if args.local_cutout and LOCAL_CUTOUT not in models:
+        models.append(LOCAL_CUTOUT)
+    if args.task != "white_background" and any(is_local(m) for m in models):
+        parser.error("local/cutout only supports --task white_background")
     prompt = (
         prompts.white_background()
         if args.task == "white_background"
@@ -154,11 +178,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.dry_run:
         return 0
 
-    try:
-        api_key = openrouter_api_key()
-    except ConfigError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return 2
+    api_key = None
+    if not all(is_local(m) for m in models):
+        try:
+            api_key = openrouter_api_key()
+        except ConfigError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
 
     out_dir = args.out / datetime.now().strftime("%Y%m%d-%H%M%S")
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -170,7 +196,7 @@ def main(argv: list[str] | None = None) -> int:
     runs = asyncio.run(
         run_comparison(
             models, request, out_dir,
-            lambda model: OpenRouterProvider(api_key, model),
+            lambda model: make_provider(api_key, model),
             args.max_cost,
         )
     )

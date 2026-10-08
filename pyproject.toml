@@ -13,7 +13,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+cutout = [
+    "pillow>=10",
+    "rembg[cpu]>=2.0.85",
+]
+dev = [
+    "pytest>=8",
+    "pillow>=10",
+]
 
 [tool.setuptools.packages.find]
 include = ["gold_imagegen*"]
