@@ -53,7 +53,15 @@ async def generate_plates(
         finally:
             await provider.aclose()
         spent += result.cost_usd or 0.0
-        written.append(plates.write_plate(out_dir, f"{label}_{start + i:02d}", result.image, kind))
+        generation = {
+            "model": result.model,
+            "prompt": prompt,
+            "cost_usd": result.cost_usd,
+            "seconds": round(result.elapsed_s, 1),
+        }
+        written.append(
+            plates.write_plate(out_dir, f"{label}_{start + i:02d}", result.image, kind, generation=generation)
+        )
     return written, spent, errors
 
 
@@ -64,7 +72,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--props", choices=sorted(prompts.ACCESSORY_PROPS), help="accessories kind only")
     parser.add_argument("--count", type=int, default=3)
     parser.add_argument("--model", default=DEFAULT_MODEL)
-    parser.add_argument("--aspect", help='e.g. "1:1"; sent only if given (not every model accepts it)')
+    parser.add_argument("--aspect", default="1:1", help='aspect ratio sent to the model (default "1:1")')
+    parser.add_argument("--no-aspect", action="store_true", help="do not send an aspect ratio (not every model accepts it)")
     parser.add_argument("--out", type=Path, default=Path("plates"))
     parser.add_argument("--max-cost", type=float, default=0.5, help="stop after this many USD (default 0.5)")
     parser.add_argument("--dry-run", action="store_true")
@@ -84,7 +93,8 @@ def main(argv: list[str] | None = None) -> int:
         generate_plates(
             lambda: OpenRouterProvider(api_key, args.model),
             kind=args.kind, style=args.style, props=args.props, count=args.count,
-            out_dir=args.out, max_cost=args.max_cost, aspect_ratio=args.aspect,
+            out_dir=args.out, max_cost=args.max_cost,
+            aspect_ratio=None if args.no_aspect else args.aspect,
         )
     )
     for path in written:

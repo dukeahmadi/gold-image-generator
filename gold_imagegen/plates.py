@@ -5,8 +5,10 @@ A plate is stored as `<name>.png` + `<name>.json`:
     {"image": "marble_01.png", "kind": "scene",
      "slot": [0.18, 0.18, 0.64, 0.64],     # x, y, w, h as fractions of the image
      "light": [1, 1],                       # direction shadows fall (x right, y down)
+     "anchor": "center",                    # where the product sits in the slot: center, top or bottom
      "occlude_below": null}                 # fraction of image height; product pixels below are hidden
 
+`anchor` is "bottom" for a ring standing in a cushion and "top" for earrings hanging from a card.
 `occlude_below` is for cushions and boxes: the product's lower part is hidden behind the plate's own
 pixels (e.g. a ring standing in a slit). Set it by hand after looking at the plate.
 """
@@ -29,6 +31,8 @@ DEFAULT_SLOTS = {
     "display_earrings": (0.25, 0.10, 0.50, 0.70),
     "display_box": (0.20, 0.20, 0.60, 0.60),
 }
+ANCHORS = ("center", "top", "bottom")
+DEFAULT_ANCHORS = {"display_ring": "bottom", "display_earrings": "top"}
 DEFAULT_LIGHT = (1.0, 1.0)  # matches "light from the upper left" in the plate prompts
 
 
@@ -40,9 +44,12 @@ class Plate:
     light: tuple[float, float] = DEFAULT_LIGHT
     occlude_below: float | None = None
     name: str = ""
+    anchor: str = "center"
 
 
-def _validate(kind: str, slot, light, occlude_below) -> None:
+def _validate(kind: str, slot, light, occlude_below, anchor: str = "center") -> None:
+    if anchor not in ANCHORS:
+        raise ValueError(f"unknown anchor {anchor!r}; choose one of {list(ANCHORS)}")
     if kind not in PLATE_KINDS:
         raise ValueError(f"unknown plate kind {kind!r}; choose one of {list(PLATE_KINDS)}")
     x, y, w, h = slot
@@ -60,9 +67,10 @@ def load_plate(json_path: Path) -> Plate:
     slot = tuple(meta.get("slot", DEFAULT_SLOTS.get(kind, DEFAULT_SLOTS["scene"])))
     light = tuple(meta.get("light", DEFAULT_LIGHT))
     occlude_below = meta.get("occlude_below")
-    _validate(kind, slot, light, occlude_below)
+    anchor = meta.get("anchor", DEFAULT_ANCHORS.get(kind, "center"))
+    _validate(kind, slot, light, occlude_below, anchor)
     image = Image.open(json_path.parent / meta["image"]).convert("RGB")
-    return Plate(image, kind, slot, light, occlude_below, json_path.stem)  # type: ignore[arg-type]
+    return Plate(image, kind, slot, light, occlude_below, json_path.stem, anchor)  # type: ignore[arg-type]
 
 
 def iter_plates(directory: Path, kinds: tuple[str, ...] | None = None) -> list[Plate]:
@@ -70,8 +78,13 @@ def iter_plates(directory: Path, kinds: tuple[str, ...] | None = None) -> list[P
     return [p for p in plates if kinds is None or p.kind in kinds]
 
 
-def write_plate(directory: Path, name: str, image_bytes: bytes, kind: str, light=DEFAULT_LIGHT) -> Path:
-    """Save a generated plate with default metadata; edit the JSON by hand if the slot needs moving."""
+def write_plate(
+    directory: Path, name: str, image_bytes: bytes, kind: str, light=DEFAULT_LIGHT,
+    generation: dict | None = None,
+) -> Path:
+    """Save a generated plate with default metadata; edit the JSON by hand if the slot needs moving.
+
+    `generation` (model, prompt, cost, seconds) is stored alongside so every plate stays auditable."""
     directory.mkdir(parents=True, exist_ok=True)
     (directory / f"{name}.png").write_bytes(image_bytes)
     meta = {
@@ -79,8 +92,11 @@ def write_plate(directory: Path, name: str, image_bytes: bytes, kind: str, light
         "kind": kind,
         "slot": list(DEFAULT_SLOTS[kind]),
         "light": list(light),
+        "anchor": DEFAULT_ANCHORS.get(kind, "center"),
         "occlude_below": None,
     }
+    if generation:
+        meta["generation"] = generation
     path = directory / f"{name}.json"
     path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
     return path
@@ -99,7 +115,12 @@ def place_on_plate(cutout: Image.Image, plate: Plate, *, shadow: bool = True) ->
             (max(1, round(product.width * scale)), max(1, round(product.height * scale))), Image.LANCZOS
         )
     x = slot_x + (slot_w - product.width) // 2
-    y = slot_y + (slot_h - product.height) // 2
+    if plate.anchor == "top":
+        y = slot_y
+    elif plate.anchor == "bottom":
+        y = slot_y + slot_h - product.height
+    else:
+        y = slot_y + (slot_h - product.height) // 2
 
     if plate.occlude_below is not None:
         cut = round(plate.occlude_below * height) - y

@@ -79,6 +79,26 @@ def test_product_is_never_upscaled():
     assert _diff_box(out, plate) == (90, 95, 110, 105)
 
 
+def test_anchor_places_the_product_at_the_bottom_or_top_of_the_slot():
+    kw = dict(slot=(0.2, 0.2, 0.6, 0.6))  # slot 40..160
+    bottom = plates.place_on_plate(_red(60, 40), _plate(anchor="bottom", **kw), shadow=False)
+    top = plates.place_on_plate(_red(60, 40), _plate(anchor="top", **kw), shadow=False)
+    assert _diff_box(bottom, _plate()) == (70, 120, 130, 160)
+    assert _diff_box(top, _plate()) == (70, 40, 130, 80)
+
+
+def test_anchor_is_validated_and_defaults_follow_the_kind(tmp_path):
+    path = plates.write_plate(tmp_path, "ring", _png(), "display_ring")
+    assert plates.load_plate(path).anchor == "bottom"
+    assert plates.load_plate(plates.write_plate(tmp_path, "card", _png(), "display_earrings")).anchor == "top"
+    assert plates.load_plate(plates.write_plate(tmp_path, "m", _png(), "scene")).anchor == "center"
+    data = json.loads(path.read_text())
+    data["anchor"] = "left"
+    path.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match="anchor"):
+        plates.load_plate(path)
+
+
 def test_occlude_below_hides_the_lower_part_of_the_product():
     plate = _plate(slot=(0.3, 0.3, 0.4, 0.4), occlude_below=0.5)  # product 80..120, line at y=100
     out = plates.place_on_plate(_red(40, 40), plate, shadow=False)
@@ -140,6 +160,9 @@ def test_generate_plates_writes_loadable_plates(tmp_path):
     assert [p.stem for p in written] == ["scene_silk_01", "scene_silk_02", "scene_silk_03"]
     assert not errors and spent == pytest.approx(0.12)
     assert all(plates.load_plate(p).kind == "scene" for p in written)
+    generation = json.loads(written[0].read_text())["generation"]
+    assert generation["cost_usd"] == 0.04 and generation["model"] == "fake"
+    assert generation["prompt"] == prompts.plate_prompt("scene", "silk")
 
 
 def test_generate_plates_stops_at_the_budget(tmp_path):
