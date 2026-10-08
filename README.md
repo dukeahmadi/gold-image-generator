@@ -13,8 +13,9 @@ pipeline:
 - **Generative** (OpenRouter models): the model redraws the whole image, so stones, engraving or metal color can
   drift. Useful for on-model shots; compare it against the original before trusting it.
 
-Status: provider layer, model comparison tool and local white-background cutout. The Telegram bot (aiogram) is
-postponed until the pipeline is chosen.
+Status: provider layer, model comparison tool, local cutout and the pixel-preserving image pipelines (white, solid
+color, multi-piece set, studio scene, accessories, compatible displays; see [docs/pipelines.md](docs/pipelines.md)).
+The Telegram bot (aiogram) is postponed until the pipelines are chosen.
 
 ## Setup
 
@@ -56,6 +57,18 @@ Known limits (all seen on real photos):
 - A product cut off by the photo frame stays cut off. A faint pale fringe remains along some edges, and stray bits
   of fingers can remain.
 
+## Image pipelines
+
+```bash
+python -m gold_imagegen.render photo1.jpg photo2.jpg --types white solid set --colors navy black --reflection
+python -m gold_imagegen.make_plates --kind scene --style white_marble --count 4 --out plates   # needs the API key
+python -m gold_imagegen.render photo1.jpg --types scene accessories display --plates plates
+```
+
+The product's pixels are never redrawn; models only paint empty background plates, once, for human review.
+Details, prompts, risks and what has (and has not) been tested: [docs/pipelines.md](docs/pipelines.md).
+A set takes its resolution from the lowest-resolution photo, since nothing is enlarged.
+
 ## Generative models (OpenRouter)
 
 ```bash
@@ -80,9 +93,14 @@ original photo. Zoom in on the stones.
 ```
 gold_imagegen/
   cutout.py        local background removal + white canvas (pixel-preserving)
-  whitebg.py       CLI for the above
+  compose.py       solid backgrounds, reflection, vignette, multi-piece sets
+  plates.py        background plates (slot, light, occlusion) and placing a product on them
+  render.py        run the pipelines on photos
+  make_plates.py   generate plates with an image model, for human review
+  whitebg.py       CLI: white background only
   providers/       ImageEditProvider interface, OpenRouter and local-cutout implementations
-  prompts.py       edit prompts (white background, on-model per jewelry type)
+  prompts.py       plate prompts and (dormant) on-model edit prompts
+docs/pipelines.md  what each image type does, its prompts, risks and test status
   compare.py       run one edit through several models, write a contact sheet
   list_models.py
 tests/
