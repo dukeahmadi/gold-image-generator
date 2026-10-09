@@ -84,6 +84,20 @@ def test_rejected_aspect_ratio_is_retried_without_it(tmp_path):
     assert [r.aspect_ratio for r in made["v/x"].requests] == ["1:1", None]
 
 
+def test_quality_is_sent_and_dropped_together_with_the_aspect_on_a_400(tmp_path):
+    made = {}
+
+    def make(model):
+        made[model] = FakeProvider(model, reject_aspect=True)
+        return made[model]
+
+    runs = asyncio.run(
+        run_suite(["v/x"], {"a": "p"}, (b"i",), tmp_path, make, max_cost=10, aspect_ratio="1:1", quality="high")
+    )
+    assert runs[0].ok and "retried without" in runs[0].note
+    assert [(r.aspect_ratio, r.quality) for r in made["v/x"].requests] == [("1:1", "high"), (None, None)]
+
+
 def test_failures_are_recorded_not_raised(tmp_path):
     runs, _ = _run(tmp_path, ["v/x"], names=("a",), fail=True)
     assert not runs[0].ok and "boom" in runs[0].error

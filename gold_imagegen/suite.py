@@ -65,6 +65,7 @@ async def run_suite(
     max_cost: float,
     concurrency: int = 3,
     aspect_ratio: str | None = "1:1",
+    quality: str | None = None,
 ) -> list[SuiteRun]:
     """One call per (prompt, model). Stops starting new calls once the reported spend reaches max_cost."""
     gate = asyncio.Semaphore(concurrency)
@@ -79,11 +80,13 @@ async def run_suite(
             note = None
             try:
                 try:
-                    result = await provider.edit(EditRequest(text, images, aspect_ratio=aspect_ratio))
+                    result = await provider.edit(
+                        EditRequest(text, images, aspect_ratio=aspect_ratio, quality=quality)
+                    )
                 except ProviderError as exc:
-                    if exc.status != 400 or not aspect_ratio:
+                    if exc.status != 400 or not (aspect_ratio or quality):
                         raise
-                    note = "aspect_ratio was rejected; retried without it"
+                    note = "aspect_ratio/quality was rejected; retried without them"
                     result = await provider.edit(EditRequest(text, images))
             except ProviderError as exc:
                 return SuiteRun(name, model, text, False, error=str(exc), note=note)
@@ -143,6 +146,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-cost", type=float, default=1.0, help="stop starting calls after this many USD (default 1.0)")
     parser.add_argument("--concurrency", type=int, default=3)
     parser.add_argument("--aspect", default="1:1")
+    parser.add_argument("--quality", help="low|medium|high|auto; sent to every model (retried without it on a 400)")
     parser.add_argument("--no-crop", action="store_true", help="send the photos as they are")
     parser.add_argument("--crop-margin", type=float, default=0.3)
     parser.add_argument("--dry-run", action="store_true")
@@ -189,6 +193,7 @@ def main(argv: list[str] | None = None) -> int:
         run_suite(
             args.models, texts, tuple(sent), out_dir, lambda m: OpenRouterProvider(api_key, m),
             max_cost=args.max_cost, concurrency=args.concurrency, aspect_ratio=args.aspect or None,
+            quality=args.quality,
         )
     )
     write_index(out_dir, inputs, runs)
