@@ -67,6 +67,7 @@ async def run_suite(
     aspect_ratio: str | None = "1:1",
     quality: str | None = None,
     aspect_by_prompt: dict[str, str] | None = None,
+    resolution: str | None = None,
 ) -> list[SuiteRun]:
     """One call per (prompt, model). Stops starting new calls once the reported spend reaches max_cost."""
     gate = asyncio.Semaphore(concurrency)
@@ -83,12 +84,12 @@ async def run_suite(
             try:
                 try:
                     result = await provider.edit(
-                        EditRequest(text, images, aspect_ratio=aspect, quality=quality)
+                        EditRequest(text, images, aspect_ratio=aspect, quality=quality, resolution=resolution)
                     )
                 except ProviderError as exc:
-                    if exc.status != 400 or not (aspect or quality):
+                    if exc.status != 400 or not (aspect or quality or resolution):
                         raise
-                    note = "aspect_ratio/quality was rejected; retried without them"
+                    note = "aspect_ratio/quality/resolution was rejected; retried without them"
                     result = await provider.edit(EditRequest(text, images))
             except ProviderError as exc:
                 return SuiteRun(name, model, text, False, error=str(exc), note=note)
@@ -148,6 +149,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-cost", type=float, default=1.0, help="stop starting calls after this many USD (default 1.0)")
     parser.add_argument("--concurrency", type=int, default=3)
     parser.add_argument("--aspect", help="one aspect ratio for every prompt (default: 1:1, or the prompt's own, e.g. 16:9 for hero_banner)")
+    parser.add_argument("--resolution", help="512|1K|2K|4K; a smaller size costs less and needs less balance reserved")
     parser.add_argument("--quality", help="low|medium|high|auto; sent to every model (retried without it on a 400)")
     parser.add_argument("--no-crop", action="store_true", help="send the photos as they are")
     parser.add_argument("--crop-margin", type=float, default=0.3)
@@ -195,7 +197,7 @@ def main(argv: list[str] | None = None) -> int:
         run_suite(
             args.models, texts, tuple(sent), out_dir, lambda m: OpenRouterProvider(api_key, m),
             max_cost=args.max_cost, concurrency=args.concurrency, aspect_ratio=args.aspect or None,
-            quality=args.quality,
+            quality=args.quality, resolution=args.resolution,
             aspect_by_prompt=None if args.aspect else {n: prompts.SUITE_ASPECTS.get(n, "1:1") for n in texts},
         )
     )

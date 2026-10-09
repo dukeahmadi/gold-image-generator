@@ -18,9 +18,11 @@ before, per-prompt aspect ratios (`hero_banner` 16:9, three portraits 4:5, the r
 **Total $0.420** for 5 images. Seedream returns about 2K images; the 16:9 banner cost less ($0.048) than a
 square ($0.093), so the price follows the pixel count.
 
-**Not run:** `macro_closeup`, `turntable_sheet`, `hand_luxury`. OpenRouter answered HTTP 402 "Insufficient credits" even
-with $0.51 left of $5: it seems to reserve the worst-case cost of a call before running it, and for this model that
-is above the remaining balance. They need a credit top-up.
+**Not run:** `macro_closeup`, `turntable_sheet`, `hand_luxury`. OpenRouter answered HTTP 402 "Insufficient credits"
+while $0.51 of the $5 was still left. Observed behavior: Seedream calls were accepted down to a balance of about $0.74
+and refused from about $0.65 downwards, even though a call costs $0.05-0.09. A retry with `--resolution 1K` and one
+call at a time was refused too, so the size of the image is not the cause. The exact rule is unknown (the model's
+metadata lists `max_completion_tokens` as 0); a top-up clears it.
 
 ## Observations
 

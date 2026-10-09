@@ -167,3 +167,14 @@ def test_new_creative_prompts_exist_and_format():
                  "macro_closeup", "turntable_sheet", "hand_luxury"):
         assert "{" not in prompts.suite_prompt(name, item="ring", brief="b", roles="r")
     assert prompts.SUITE_ASPECTS["hero_banner"] == "16:9"
+
+
+def test_resolution_is_sent_to_the_model(tmp_path):
+    providers = []
+
+    def make(model):
+        providers.append(FakeProvider(model))
+        return providers[-1]
+
+    asyncio.run(run_suite(["v/x"], {"a": "p"}, (b"i",), tmp_path, make, max_cost=10, resolution="1K"))
+    assert [r.resolution for p in providers for r in p.requests] == ["1K"]
