@@ -69,6 +69,19 @@ The product's pixels are never redrawn; models only paint empty background plate
 Details, prompts, risks and what has (and has not) been tested: [docs/pipelines.md](docs/pipelines.md).
 A set takes its resolution from the lowest-resolution photo, since nothing is enlarged.
 
+## Reference-photo edits across models (suite)
+
+```bash
+python -m gold_imagegen.suite --images front.jpg top.jpg --item ring \
+    --brief "A men's signet ring ... square black stone ..." \
+    --roles "Image 1 is the front view; image 2 is from above." --max-cost 2
+```
+
+Runs several prompts (white catalog, navy luxury, marble, silk with petals, ring cushion, jewelry box, 3D hero) on
+several models with the same reference photos and keeps every output with its prompt, model, cost and time. These
+models redraw the piece, so compare each output zoomed in against the photos. First real run:
+[docs/ring-test-report.md](docs/ring-test-report.md).
+
 ## Generative models (OpenRouter)
 
 ```bash
@@ -95,7 +108,8 @@ gold_imagegen/
   cutout.py        local background removal + white canvas (pixel-preserving)
   compose.py       solid backgrounds, reflection, vignette, multi-piece sets
   plates.py        background plates (slot, light, occlusion) and placing a product on them
-  render.py        run the pipelines on photos
+  render.py        run the pixel-preserving pipelines on photos
+  suite.py         several prompts x several models on reference photos of one piece
   make_plates.py   generate plates with an image model, for human review
   whitebg.py       CLI: white background only
   providers/       ImageEditProvider interface, OpenRouter and local-cutout implementations

@@ -116,3 +116,63 @@ def plate_prompt(kind: str, style: str = "white_marble", props: str | None = Non
             raise ValueError(f"unknown props {props!r}; choose one of {sorted(ACCESSORY_PROPS)}")
         subject += " " + ACCESSORY_PROPS[props] + " Props stay near the edges, never in the center."
     return PLATE_BASE.format(subject=subject, view=FLAT_LAY)
+
+
+# --- reference-based suite prompts ----------------------------------------------------------------
+# The model is shown real photos of ONE piece and may re-render it in a new scene (3D, in a box, ...).
+# The design must not change, so every prompt carries the same explicit "keep exactly" block plus a
+# short design brief (what the piece looks like) written per product.
+
+SUITE_PRESERVE = (
+    "The reference images show ONE real piece of jewelry. {roles} {brief} "
+    "Reproduce exactly this piece: keep every engraving, motif, stone (count, shape and color), setting, "
+    "proportion, metal color and finish exactly as in the references. Do not redesign, simplify, stylize, "
+    "add or remove any detail, and never replace a motif with a different one. Where a detail is not visible "
+    "in the references, continue only what is visible. Do not change any other element of the design."
+)
+SUITE_SCENES = {
+    "white_catalog": (
+        "Professional e-commerce product photo of this {item} on a pure white (#FFFFFF) seamless studio "
+        "background, shown in a three-quarter front view so the main face of the design is clearly visible, "
+        "soft even studio lighting, a subtle soft contact shadow, sharp focus, true-to-life metal color."
+    ),
+    "solid_navy": (
+        "Luxury jewelry advertisement of this {item} on a deep navy blue (#0B1F3A) seamless background with a "
+        "soft vignette, standing on a glossy black surface with a subtle mirror reflection below it, soft-box "
+        "lighting that makes the metal glow, three-quarter front view."
+    ),
+    "studio_marble": (
+        "Studio product photo of this {item} on a clean white marble surface with fine grey veining, "
+        "three-quarter front view, soft diffused window light from the upper left, a gentle natural shadow, "
+        "softly blurred background."
+    ),
+    "accessories_silk": (
+        "Product photo of this {item} on smooth champagne-colored silk with soft folds. A few soft pink rose "
+        "petals and a thin satin ribbon lie near the edges and corners of the frame; none of them touches or "
+        "covers the {item}. Soft window light from the upper left, shallow depth of field."
+    ),
+    "display_cushion": (
+        "Product photo of this {item} standing upright in the slit of a beige-grey velvet ring display "
+        "cushion, seen from the front at eye level against a soft neutral backdrop. The lower part of the band "
+        "sits inside the slit and the main face of the design is turned toward the camera. Soft diffused light."
+    ),
+    "display_box": (
+        "Product photo of this {item} in an open cream jewelry gift box, standing upright in the slot of the "
+        "white satin cushion, photographed from slightly above at a three-quarter angle, the main face of the "
+        "design toward the camera, soft diffused light, shallow depth of field."
+    ),
+    "hero_3d": (
+        "Photorealistic 3D render of this {item}: a hero shot at a three-quarter angle, floating slightly above "
+        "a soft gradient grey studio backdrop, crisp reflections on the metal, premium product-visualization "
+        "look. It must read as the same physical object as in the photos, with its true geometry."
+    ),
+}
+SUITE_NAMES = tuple(SUITE_SCENES)
+
+
+def suite_prompt(name: str, *, item: str = "piece", brief: str = "", roles: str = "") -> str:
+    if name not in SUITE_SCENES:
+        raise ValueError(f"unknown prompt {name!r}; choose one of {list(SUITE_NAMES)}")
+    scene = SUITE_SCENES[name].format(item=item)
+    preserve = SUITE_PRESERVE.format(roles=roles, brief=brief)
+    return f"{scene} {' '.join(preserve.split())}"

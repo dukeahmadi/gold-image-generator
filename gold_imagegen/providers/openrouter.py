@@ -13,10 +13,21 @@ BASE_URL = "https://openrouter.ai/api/v1"
 RETRY_STATUS = {429, 500, 502, 503, 504}
 
 
+def _data_url(image: bytes) -> str:
+    if image.startswith(b"\xff\xd8"):
+        mime = "image/jpeg"
+    elif image[:4] == b"RIFF" and image[8:12] == b"WEBP":
+        mime = "image/webp"
+    else:
+        mime = "image/png"
+    return f"data:{mime};base64,{base64.b64encode(image).decode('ascii')}"
+
+
 class OpenRouterProvider:
     """Image generation/editing through OpenRouter's `POST /api/v1/images`.
 
-    Reference images go in `input_references` as base64. The target model must list
+    Reference images go in `input_references` as `{"type": "image_url", "image_url": {"url": <data URL>}}`
+    (verified against the live API: the bare `{"data": <base64>}` shape is rejected). The target model must list
     "image" in its input modalities (see `python -m gold_imagegen.list_models`).
     Optional parameters (aspect_ratio, resolution, quality) are only sent when set,
     because not every model accepts every parameter.
@@ -57,7 +68,7 @@ class OpenRouterProvider:
         payload: dict[str, Any] = {"model": self.model, "prompt": req.prompt, "n": 1}
         if req.images:
             payload["input_references"] = [
-                {"data": base64.b64encode(img).decode("ascii")} for img in req.images
+                {"type": "image_url", "image_url": {"url": _data_url(img)}} for img in req.images
             ]
         for name in ("aspect_ratio", "resolution", "quality"):
             value = getattr(req, name)

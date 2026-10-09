@@ -42,9 +42,9 @@ def test_edit_success_builds_payload_and_parses_result():
     assert seen["body"]["model"] == "vendor/model"
     assert seen["body"]["quality"] == "high"
     assert "aspect_ratio" not in seen["body"]
-    assert [r["data"] for r in seen["body"]["input_references"]] == [
-        base64.b64encode(b"one").decode(),
-        base64.b64encode(b"two").decode(),
+    assert seen["body"]["input_references"] == [
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(b"one").decode()}},
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(b"two").decode()}},
     ]
     assert result.image == IMG
     assert result.media_type == "image/png"
@@ -92,3 +92,15 @@ def test_missing_image_in_response():
 
     with pytest.raises(ProviderError, match="no image"):
         asyncio.run(_provider(handler).edit(EditRequest(prompt="p")))
+
+
+def test_reference_images_keep_their_real_mime_type():
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["urls"] = [r["image_url"]["url"] for r in json.loads(request.content)["input_references"]]
+        return _ok()
+
+    jpeg, webp = b"\xff\xd8\xff\xe0rest", b"RIFF\x00\x00\x00\x00WEBPrest"
+    asyncio.run(_provider(handler).edit(EditRequest(prompt="p", images=(jpeg, webp))))
+    assert [u.split(";")[0] for u in seen["urls"]] == ["data:image/jpeg", "data:image/webp"]

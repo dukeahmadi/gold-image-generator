@@ -17,11 +17,11 @@ from typing import Any
 
 from PIL import Image, ImageOps
 
-from .compose import solid_background, trim
+from .compose import VISIBLE_ALPHA, solid_background, trim
 
 __all__ = [
     "DEFAULT_MODEL", "QUALITY_MODEL", "MIN_LONG_SIDE", "CutoutResult", "load_image",
-    "resolution_warning", "cut_out", "trim", "on_white", "process", "to_png",
+    "resolution_warning", "cut_out", "crop_around_product", "trim", "on_white", "process", "to_png",
 ]
 
 # Measured on a 16 GB CPU container (see README): lite ~23 s/photo, 6.6 GB peak; dis ~37 s/photo, 7.7 GB peak.
@@ -80,6 +80,22 @@ def cut_out(image: Image.Image, model: str = DEFAULT_MODEL) -> Image.Image:
     from rembg import remove
 
     return remove(image, session=session).convert("RGBA")
+
+
+def crop_around_product(image: Image.Image, cutout: Image.Image, margin: float = 0.3) -> Image.Image:
+    """Square crop of the ORIGINAL photo around the product (pixels are cropped, never resampled).
+
+    Useful before sending a photo to a model: a small product in a large frame wastes resolution.
+    """
+    mask = cutout.getchannel("A").point(lambda a: 255 if a > VISIBLE_ALPHA else 0)
+    box = mask.getbbox()
+    if box is None:
+        raise ValueError("no product found in the photo")
+    left, top, right, bottom = box
+    side = min(round(max(right - left, bottom - top) * (1 + 2 * margin)), *image.size)
+    x0 = min(max((left + right) // 2 - side // 2, 0), image.width - side)
+    y0 = min(max((top + bottom) // 2 - side // 2, 0), image.height - side)
+    return image.crop((x0, y0, x0 + side, y0 + side))
 
 
 def on_white(cutout: Image.Image, *, margin: float = 0.08, shadow: bool = True) -> Image.Image:
