@@ -1,12 +1,31 @@
 # Model choice for ring edits (2026-10-09)
 
+## Decision
+
+The owner chose **`bytedance-seed/seedream-5-0-pro`** ("it looks better to my eye"). Cost was said not to matter.
+The provider layer keeps the model a single id, so this can be changed without touching the pipelines.
+
+What that choice costs and buys, from the runs below:
+
+- $0.093 per 1024x1024 image (Sunburst high: $0.07), and **slow: 90-120 s per image** (Sunburst: 20-40 s). A request with
+  several outputs should run them in parallel.
+- In the hand poses Seedream drew the ring large and sharp, which is a plus.
+- In the close frontal comparison (`ornament_compare`) Seedream is about as close to the original as Sunburst: flat
+  square black stone with a thin gold frame, a halo of small stones and dense scroll ornament on the shoulders.
+  It is weaker on the **serrated tooth edge** around the halo (visible in the original, Sunburst and Grok) and it
+  draws a chunkier band.
+
+## My fidelity ranking (an earlier judgement, not the decision)
+
+The ranking below was made mainly from the 3/4 views. In the frontal comparison the differences between Sunburst, MAI,
+Grok and Seedream were smaller and mixed, so treat the order of ranks 1-5 as weak. FLUX (domed stone, brassy color) and
+Nano Banana Pro (invented ornament) were clearly further from the original in both views.
+
 One ring (two photos), 7 scenes + 4 hand poses on 6 models, then a premium round (Sunburst `quality=high`, Flare `high`,
 Nano Banana Pro). Judged by looking at the ring face (stone shape, halo of small stones, shoulder ornament, metal) next
 to the original photo. **One ring and one run per prompt: this is a visual judgement, not a statistical result.**
 
-## Verdict
-
-**`openai/gpt-image-2.5-sunburst` with `quality=high`** is the most faithful to the original in the front-view
+**`openai/gpt-image-2.5-sunburst` with `quality=high`** looked the most faithful to the original in the front-view
 comparison, and it is also cheap ($0.07 per image at high quality, $0.03 at the default) and succeeded on every call.
 
 | rank | model | what it did to the design |
