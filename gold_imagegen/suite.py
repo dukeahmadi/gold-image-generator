@@ -134,6 +134,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--images", nargs="+", type=Path, required=True, help="reference photos of the same piece, in order")
     parser.add_argument("--item", default="piece", help='what it is, e.g. "ring"')
     parser.add_argument("--brief", default="", help="what the piece looks like (stones, engraving, metal): it is part of every prompt")
+    parser.add_argument("--wearer", default="a man's", help='hand prompts: whose hand, e.g. "a woman\'s"')
+    parser.add_argument("--skin", default="natural medium (wheat)", help="hand prompts: skin tone")
     parser.add_argument("--roles", default="", help="what each photo shows, e.g. 'Image 1 is the front view; image 2 is from above.'")
     parser.add_argument("--prompts", nargs="+", choices=prompts.SUITE_NAMES, default=list(prompts.SUITE_NAMES))
     parser.add_argument("--models", nargs="+", default=list(DEFAULT_MODELS))
@@ -150,7 +152,9 @@ def main(argv: list[str] | None = None) -> int:
         if not path.is_file():
             parser.error(f"file not found: {path}")
     texts = {
-        name: prompts.suite_prompt(name, item=args.item, brief=args.brief, roles=args.roles)
+        name: prompts.suite_prompt(
+            name, item=args.item, brief=args.brief, roles=args.roles, wearer=args.wearer, skin=args.skin
+        )
         for name in args.prompts
     }
     print(f"images: {len(args.images)}  models: {len(args.models)}  prompts: {len(texts)}  max cost: ${args.max_cost:.2f}")

@@ -108,3 +108,25 @@ def test_crop_around_product_is_square_exact_and_inside_the_photo():
     edge = Image.new("RGBA", photo.size, (0, 0, 0, 0))
     edge.paste(Image.new("RGBA", (20, 20), (1, 2, 3, 255)), (80, 180))  # product in the corner
     assert cutout.crop_around_product(photo, edge, margin=2).size == (100, 100)  # clamped to the photo
+
+
+HAND_PROMPTS = [n for n in prompts.SUITE_NAMES if n.startswith("hand_")]
+
+
+def test_there_are_four_hand_poses():
+    assert HAND_PROMPTS == ["hand_flat", "hand_fist", "hand_resting", "hand_raised"]
+
+
+@pytest.mark.parametrize("name", HAND_PROMPTS)
+def test_hand_prompts_pin_down_anatomy_scale_and_the_design(name):
+    text = prompts.suite_prompt(name, item="ring", brief="B.", roles="R.")
+    assert "a man's hand" in text and "natural medium (wheat)" in text
+    assert "exactly five fingers" in text and "realistic scale" in text
+    assert "no other jewelry" in text and "no face is visible" in text
+    assert "never replace a motif with a different one" in text
+    assert "{" not in text
+
+
+def test_hand_prompts_follow_wearer_and_skin():
+    text = prompts.suite_prompt("hand_flat", item="ring", wearer="a woman's", skin="light")
+    assert "a woman's hand" in text and "Skin tone: light" in text

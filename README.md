@@ -77,10 +77,12 @@ python -m gold_imagegen.suite --images front.jpg top.jpg --item ring \
     --roles "Image 1 is the front view; image 2 is from above." --max-cost 2
 ```
 
-Runs several prompts (white catalog, navy luxury, marble, silk with petals, ring cushion, jewelry box, 3D hero) on
+Runs several prompts (white catalog, navy luxury, marble, silk with petals, ring cushion, jewelry box, 3D hero, and four
+hand poses: `hand_flat`, `hand_fist`, `hand_resting`, `hand_raised`; `--wearer` and `--skin` set whose hand) on
 several models with the same reference photos and keeps every output with its prompt, model, cost and time. These
 models redraw the piece, so compare each output zoomed in against the photos. First real run:
-[docs/ring-test-report.md](docs/ring-test-report.md).
+[docs/ring-test-report.md](docs/ring-test-report.md) and
+[docs/ring-hand-test-report.md](docs/ring-hand-test-report.md).
 
 ## Generative models (OpenRouter)
 

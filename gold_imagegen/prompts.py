@@ -130,6 +130,11 @@ SUITE_PRESERVE = (
     "add or remove any detail, and never replace a motif with a different one. Where a detail is not visible "
     "in the references, continue only what is visible. Do not change any other element of the design."
 )
+_HAND_RULES = (
+    "Skin tone: {skin}; natural short clean nails; no other jewelry, no watch, no tattoos; the hand is cropped "
+    "at the wrist or forearm and no face is visible. Correct hand anatomy: exactly five fingers with natural "
+    "proportions, and the {item} fits the finger snugly at a realistic scale for {wearer} hand."
+)
 SUITE_SCENES = {
     "white_catalog": (
         "Professional e-commerce product photo of this {item} on a pure white (#FFFFFF) seamless studio "
@@ -166,13 +171,36 @@ SUITE_SCENES = {
         "a soft gradient grey studio backdrop, crisp reflections on the metal, premium product-visualization "
         "look. It must read as the same physical object as in the photos, with its true geometry."
     ),
+    "hand_flat": (
+        "Photorealistic close-up product photo of this {item} worn on the ring finger of {wearer} hand, the back "
+        "of the hand facing the camera, fingers relaxed and slightly apart, the hand resting on a soft neutral "
+        "surface. " + _HAND_RULES + " Soft diffused window light, shallow depth of field."
+    ),
+    "hand_fist": (
+        "Photorealistic product photo of this {item} worn on the ring finger of {wearer} hand held in a loose "
+        "fist and seen from the front, the knuckles toward the camera so the main face of the design is clearly "
+        "visible. " + _HAND_RULES + " Soft studio light, shallow depth of field, neutral blurred background."
+    ),
+    "hand_resting": (
+        "Photorealistic product photo of this {item} worn on the ring finger of {wearer} hand resting on a dark "
+        "polished wooden table, seen from a low three-quarter side angle with the ring turned toward the camera "
+        "so the main face of the design is visible. " + _HAND_RULES + " Warm soft light, shallow depth of field."
+    ),
+    "hand_raised": (
+        "Photorealistic lifestyle product photo of this {item} worn on the ring finger of {wearer} hand raised "
+        "in front of the chest, fingers gently curled and the back of the hand slightly turned toward the camera, "
+        "the ring catching the light. " + _HAND_RULES + " Soft blurred neutral studio background."
+    ),
 }
 SUITE_NAMES = tuple(SUITE_SCENES)
 
 
-def suite_prompt(name: str, *, item: str = "piece", brief: str = "", roles: str = "") -> str:
+def suite_prompt(
+    name: str, *, item: str = "piece", brief: str = "", roles: str = "",
+    wearer: str = "a man's", skin: str = "natural medium (wheat)",
+) -> str:
     if name not in SUITE_SCENES:
         raise ValueError(f"unknown prompt {name!r}; choose one of {list(SUITE_NAMES)}")
-    scene = SUITE_SCENES[name].format(item=item)
+    scene = SUITE_SCENES[name].format(item=item, wearer=wearer, skin=skin)
     preserve = SUITE_PRESERVE.format(roles=roles, brief=brief)
     return f"{scene} {' '.join(preserve.split())}"
