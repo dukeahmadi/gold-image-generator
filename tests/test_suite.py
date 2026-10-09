@@ -127,8 +127,9 @@ def test_crop_around_product_is_square_exact_and_inside_the_photo():
 HAND_PROMPTS = [n for n in prompts.SUITE_NAMES if n.startswith("hand_")]
 
 
-def test_there_are_four_hand_poses():
-    assert HAND_PROMPTS == ["hand_flat", "hand_fist", "hand_resting", "hand_raised"]
+def test_there_are_four_hand_poses_plus_the_luxury_scene():
+    assert HAND_PROMPTS[:4] == ["hand_flat", "hand_fist", "hand_resting", "hand_raised"]
+    assert HAND_PROMPTS[4:] == ["hand_luxury"]
 
 
 @pytest.mark.parametrize("name", HAND_PROMPTS)
@@ -144,3 +145,25 @@ def test_hand_prompts_pin_down_anatomy_scale_and_the_design(name):
 def test_hand_prompts_follow_wearer_and_skin():
     text = prompts.suite_prompt("hand_flat", item="ring", wearer="a woman's", skin="light")
     assert "a woman's hand" in text and "Skin tone: light" in text
+
+
+def test_prompts_can_have_their_own_aspect_ratio(tmp_path):
+    providers = []
+
+    def make(model):
+        providers.append(FakeProvider(model))
+        return providers[-1]
+
+    asyncio.run(
+        run_suite(["v/x"], {"a": "p", "b": "q"}, (b"i",), tmp_path, make, max_cost=10,
+                  aspect_ratio="1:1", aspect_by_prompt={"b": "16:9"})
+    )
+    by_prompt = {r.prompt: r.aspect_ratio for p in providers for r in p.requests}
+    assert by_prompt == {"p": "1:1", "q": "16:9"}
+
+
+def test_new_creative_prompts_exist_and_format():
+    for name in ("black_gold_luxury", "sunlit_window", "podium_minimal", "flowers_editorial", "hero_banner",
+                 "macro_closeup", "turntable_sheet", "hand_luxury"):
+        assert "{" not in prompts.suite_prompt(name, item="ring", brief="b", roles="r")
+    assert prompts.SUITE_ASPECTS["hero_banner"] == "16:9"

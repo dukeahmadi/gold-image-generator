@@ -191,8 +191,50 @@ SUITE_SCENES = {
         "in front of the chest, fingers gently curled and the back of the hand slightly turned toward the camera, "
         "the ring catching the light. " + _HAND_RULES + " Soft blurred neutral studio background."
     ),
+    "black_gold_luxury": (
+        "Dark, moody luxury jewelry advertisement of this {item} on polished black marble with thin gold veins, "
+        "dramatic rim lighting from behind and a soft warm golden glow, a faint reflection of the {item} in the "
+        "surface, deep shadows, three-quarter front view, ultra-sharp detail, cinematic."
+    ),
+    "sunlit_window": (
+        "Warm golden-hour lifestyle photo of this {item} resting on natural linen cloth on a sunlit windowsill, "
+        "soft sunlight with gentle leaf-shaped shadows falling across the cloth but not across the face of the "
+        "{item}, shallow depth of field, a calm blurred garden outside, three-quarter front view."
+    ),
+    "podium_minimal": (
+        "Modern minimalist product photo of this {item} standing on a small cream plaster podium, a soft pastel "
+        "beige background with a gentle arch shape, soft studio light with a clean long shadow, portrait "
+        "composition with generous empty space above, premium catalog style."
+    ),
+    "flowers_editorial": (
+        "Editorial still life of this {item} on a pale stone slab, surrounded by a few dried flowers, eucalyptus "
+        "leaves and a sprig of baby's breath placed around it without touching or covering it, soft natural "
+        "light, muted earthy palette, shallow depth of field."
+    ),
+    "hero_banner": (
+        "Wide website hero banner: this {item} large on the right third of the frame on a dark charcoal gradient "
+        "background with soft golden bokeh lights, the left two thirds empty and calm for headline text, "
+        "luxurious elegant mood, sharp focus on the {item}, three-quarter front view."
+    ),
+    "macro_closeup": (
+        "Extreme macro close-up of the main face of this {item}: the central stone, its halo of small stones and "
+        "the engraved shoulder ornament in razor-sharp focus, very shallow depth of field, soft warm studio "
+        "light, rich reflections on the metal."
+    ),
+    "turntable_sheet": (
+        "A clean 2x2 product sheet on a pure white background showing the same {item} from four angles: front, "
+        "three-quarter left, side profile and top-down looking through the band, evenly lit, equal size, thin "
+        "light-grey separators, no text."
+    ),
+    "hand_luxury": (
+        "Dark, moody lifestyle photo of this {item} worn on the ring finger of {wearer} hand resting on the "
+        "edge of a dark leather armchair, a tailored dark suit sleeve with a white shirt cuff visible, low-key "
+        "warm lighting, shallow depth of field. " + _HAND_RULES
+    ),
 }
 SUITE_NAMES = tuple(SUITE_SCENES)
+# Prompts that want a different frame; everything else is square. `--aspect` overrides this for all prompts.
+SUITE_ASPECTS = {"sunlit_window": "4:5", "podium_minimal": "4:5", "hand_luxury": "4:5", "hero_banner": "16:9"}
 
 
 def suite_prompt(
