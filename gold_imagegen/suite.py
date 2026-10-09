@@ -22,7 +22,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 
-from . import prompts
+from . import presets, prompts
 from .config import ConfigError, openrouter_api_key
 from .providers import EditRequest, ImageEditProvider, OpenRouterProvider, ProviderError
 
@@ -143,7 +143,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--wearer", default="a man's", help='hand prompts: whose hand, e.g. "a woman\'s"')
     parser.add_argument("--skin", default="natural medium (wheat)", help="hand prompts: skin tone")
     parser.add_argument("--roles", default="", help="what each photo shows, e.g. 'Image 1 is the front view; image 2 is from above.'")
-    parser.add_argument("--prompts", nargs="+", choices=prompts.SUITE_NAMES, default=list(prompts.SUITE_NAMES))
+    parser.add_argument("--prompts", nargs="+", choices=prompts.SUITE_NAMES, help="scene names (default: all)")
+    parser.add_argument("--group", nargs="+", choices=list(presets.GROUPS), help="all presets of these groups (see presets.py)")
+    parser.add_argument("--head-width-mm", type=float, help="width of the ring's face; makes coin_scale / ruler_scale state a true size")
     parser.add_argument("--models", nargs="+", default=list(DEFAULT_MODELS))
     parser.add_argument("--out", type=Path, default=Path("out/suite"))
     parser.add_argument("--max-cost", type=float, default=1.0, help="stop starting calls after this many USD (default 1.0)")
@@ -159,11 +161,17 @@ def main(argv: list[str] | None = None) -> int:
     for path in args.images:
         if not path.is_file():
             parser.error(f"file not found: {path}")
+    if args.prompts and args.group:
+        parser.error("use --prompts or --group, not both")
+    names = args.prompts or (
+        [p.key for p in presets.PRESETS if p.group in args.group] if args.group else list(prompts.SUITE_NAMES)
+    )
     texts = {
         name: prompts.suite_prompt(
-            name, item=args.item, brief=args.brief, roles=args.roles, wearer=args.wearer, skin=args.skin
+            name, item=args.item, brief=args.brief, roles=args.roles, wearer=args.wearer, skin=args.skin,
+            head_width_mm=args.head_width_mm,
         )
-        for name in args.prompts
+        for name in names
     }
     print(f"images: {len(args.images)}  models: {len(args.models)}  prompts: {len(texts)}  max cost: ${args.max_cost:.2f}")
     for name, text in texts.items():

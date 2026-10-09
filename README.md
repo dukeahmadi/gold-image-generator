@@ -84,6 +84,15 @@ models redraw the piece, so compare each output zoomed in against the photos. Fi
 [docs/ring-test-report.md](docs/ring-test-report.md) and
 [docs/ring-hand-test-report.md](docs/ring-hand-test-report.md).
 
+## Presets for rings
+
+The website offers 29 ready-made scenes in six groups (catalog and detail, hands, gifts and proposal, studio, Iranian
+backgrounds, occasions). `python -m gold_imagegen.presets` prints the menu, `--json` gives it to the form, and
+`python -m gold_imagegen.suite --group persian ...` runs a whole group. Each preset lists the extra inputs it needs
+(gender, skin tone, ring-face width, a second ring) and the risk that the model changes the design:
+[docs/presets.md](docs/presets.md). Seedream 5 Pro is the chosen model; it needs roughly $0.7 of balance on the
+OpenRouter account before it accepts a call.
+
 ## Generative models (OpenRouter)
 
 ```bash
@@ -112,6 +121,7 @@ gold_imagegen/
   plates.py        background plates (slot, light, occlusion) and placing a product on them
   render.py        run the pixel-preserving pipelines on photos
   suite.py         several prompts x several models on reference photos of one piece
+  presets.py       the 29 ring presets: groups, Persian titles, needed inputs, risk
   make_plates.py   generate plates with an image model, for human review
   whitebg.py       CLI: white background only
   providers/       ImageEditProvider interface, OpenRouter and local-cutout implementations
