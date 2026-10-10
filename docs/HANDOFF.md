@@ -25,19 +25,8 @@ them again. Use this brief and these roles (they are part of every prompt):
 
 ## Pending
 
-1. **Run the 17 new presets with Seedream** (never run yet; about $1.6). The OpenRouter balance was $0.51 and Seedream
-   refuses calls (HTTP 402) below roughly $0.65-0.7 of balance, so the account needs credit first:
-
-```bash
-python -m gold_imagegen.suite --images ring_front.jpg ring_top.jpg --item ring \
-  --brief "<brief above>" --roles "<roles above>" \
-  --prompts macro_stone macro_ornament coin_scale ruler_scale woman_hand_flowers proposal_box \
-            persian_tile persian_rug copper_tray hafez_book tea_nabat pomegranate_saffron \
-            nowruz yalda sepandarmazgan mothers_day fathers_day \
-  --models bytedance-seed/seedream-5-0-pro --max-cost 1.8 --concurrency 3
-```
-
-   Check the balance first: `GET https://openrouter.ai/api/v1/credits` (`total_credits - total_usage`).
+1. ~~Run the 17 new presets with Seedream~~ **Done on 2026-10-10**: 17/17 ok, $1.581. See
+   `docs/seedream-presets-report.md` (prompts, cost, observations).
 2. `couple_rings_set` needs photos of two rings; `woman_hand_flowers` and the Father's/Mother's Day scenes need a
    fitting ring (the test ring is a men's signet).
 3. Not yet run with Seedream: `macro_closeup`, `turntable_sheet`, `hand_luxury`.
@@ -49,7 +38,7 @@ python -m gold_imagegen.suite --images ring_front.jpg ring_top.jpg --item ring \
 
 ## Money so far
 
-OpenRouter usage $4.4894 of $5 (every call is recorded in `docs/*report*.md`; the ledger matched the account to the
+OpenRouter usage $6.0704 of $15 total credits, i.e. $8.93 left (every call is recorded in `docs/*report*.md`; the ledger matched the account to the
 last decimal). Costs per 1024-2048 px image: Seedream $0.093 (16:9: $0.048), Sunburst $0.03 ($0.07 at quality high),
 MAI $0.044, FLUX.3 $0.048, Grok $0.08.
 
